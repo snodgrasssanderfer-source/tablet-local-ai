@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 # 平板本地 AI 懒人包：Qwen3-30B-A3B（llama.cpp）+ SillyTavern（酒馆）
 # 用法（在 Termux 里）：
-#   curl -fsSL https://raw.githubusercontent.com/<账号>/tablet-local-ai/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/snodgrasssanderfer-source/tablet-local-ai/main/install.sh | bash
 set -euo pipefail
 
 REPO_RAW="${REPO_RAW:-https://raw.githubusercontent.com/snodgrasssanderfer-source/tablet-local-ai/main}"
