@@ -127,6 +127,18 @@ ai-bench
 
 会自动安装 OpenCL 和 Vulkan 两个 GPU 后端，用当前模型分别测纯 CPU 和每个 GPU 后端的速度，结果保存在 `~/ai/logs/bench.txt`。如果某个 GPU 后端明显更快，编辑 `~/ai/config.env`，把 `NGL` 改成 `99`、`DEVICE` 填成那个设备名，然后 `ai-stop` 再 `ai-start`。
 
+## 让电脑也能用平板上的模型（局域网）
+
+例如给电脑上 ComfyUI 的"提示词扩写"节点用。在 Termux 里粘贴：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/snodgrasssanderfer-source/tablet-local-ai/main/extras/enable-lan.sh | bash
+```
+
+会显示电脑要填的接口地址和访问密钥。开启后，平板上的酒馆和 Operit 也要填这个密钥（API Key）。电脑和平板要连同一个 Wi-Fi。
+
+关闭局域网访问：`sed -i '/^HOST=/d;/^API_KEY=/d' ~/ai/config.env && ai-stop && ai-start`
+
 ## 让它稳定运行
 
 安卓很容易把后台程序杀掉，建议设置：
