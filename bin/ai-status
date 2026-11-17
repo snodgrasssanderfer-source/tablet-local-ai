@@ -1,0 +1,12 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# 查看运行状态和内存
+# shellcheck source=/dev/null
+source "$HOME/ai/config.env"
+echo "模型：$(basename "$MODEL")   上下文：$CTX   线程：$THREADS"
+curl -fs "http://127.0.0.1:$PORT/health" >/dev/null 2>&1 && echo "模型服务：运行中（http://127.0.0.1:$PORT/v1）" || echo "模型服务：未运行"
+curl -fs "http://127.0.0.1:$ST_PORT" >/dev/null 2>&1 && echo "酒馆：运行中（http://127.0.0.1:$ST_PORT）" || echo "酒馆：未运行"
+echo
+free -h 2>/dev/null || cat /proc/meminfo | head -3
+echo
+echo "最近的模型日志："
+tail -n 5 "$HOME/ai/logs/llama.log" 2>/dev/null || echo "（暂无）"

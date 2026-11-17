@@ -1,0 +1,5 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# 停止模型服务和酒馆，释放内存
+pkill -x llama-server 2>/dev/null && echo "已停止模型服务" || echo "模型服务没有在运行"
+pkill -f "node server.js" 2>/dev/null && echo "已停止酒馆" || echo "酒馆没有在运行"
+termux-wake-unlock 2>/dev/null || true

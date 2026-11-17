@@ -1,0 +1,51 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# 启动模型服务（llama-server）和酒馆（SillyTavern）
+set -uo pipefail
+AI="$HOME/ai"
+# shellcheck source=/dev/null
+source "$AI/config.env"
+mkdir -p "$AI/logs"
+
+up() { curl -fs "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; }
+
+termux-wake-lock 2>/dev/null || true   # 防止息屏后被系统休眠
+
+if up; then
+  echo "模型服务已经在运行。"
+else
+  [ -f "$MODEL" ] || { echo "找不到模型文件：$MODEL（检查 ~/ai/config.env）"; exit 1; }
+  echo "启动模型服务：$(basename "$MODEL")"
+  # Qwen3-Instruct-2507 官方推荐采样：temp 0.7 / top_p 0.8 / top_k 20 / min_p 0（客户端可覆盖）
+  nohup llama-server -m "$MODEL" --host 127.0.0.1 --port "$PORT" \
+    -c "$CTX" -t "$THREADS" --jinja -fa on \
+    --cache-type-k q8_0 --cache-type-v q8_0 \
+    --temp 0.7 --top-p 0.8 --top-k 20 --min-p 0 \
+    --alias qwen3-30b-a3b \
+    > "$AI/logs/llama.log" 2>&1 &
+  echo "正在加载模型（第一次 1～3 分钟）……"
+  for i in $(seq 1 300); do
+    up && break
+    if ! pgrep -x llama-server >/dev/null; then
+      echo "模型服务退出了，多半是内存不够被系统杀掉。最后几行日志："
+      tail -n 15 "$AI/logs/llama.log"
+      echo "可以：1) 关掉其他 App 再试；2) 把 ~/ai/config.env 里的 CTX 改小；3) 重新运行安装脚本换小一号的模型。"
+      exit 1
+    fi
+    sleep 2
+  done
+  up && echo "模型服务就绪：http://127.0.0.1:$PORT/v1" || { echo "等待超时，查看日志：~/ai/logs/llama.log"; exit 1; }
+fi
+
+if curl -fs "http://127.0.0.1:$ST_PORT" >/dev/null 2>&1; then
+  echo "酒馆已经在运行。"
+else
+  echo "启动酒馆……"
+  (cd "$AI/SillyTavern" && nohup node server.js --port "$ST_PORT" > "$AI/logs/sillytavern.log" 2>&1 &)
+  for i in $(seq 1 60); do curl -fs "http://127.0.0.1:$ST_PORT" >/dev/null 2>&1 && break; sleep 1; done
+fi
+
+echo
+echo "酒馆：http://127.0.0.1:$ST_PORT"
+echo "模型接口（填到酒馆 / Operit）：http://127.0.0.1:$PORT/v1"
+echo "模型自带的简易聊天页：http://127.0.0.1:$PORT"
+termux-open-url "http://127.0.0.1:$ST_PORT" 2>/dev/null || true
