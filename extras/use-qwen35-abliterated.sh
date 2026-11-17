@@ -17,6 +17,17 @@ done
 ai-stop >/dev/null 2>&1 || true
 
 HAVE=0; [ -f "$M/$F" ] && HAVE=$(stat -c %s "$M/$F")
+# 先找手动拷进平板"下载"文件夹的文件（电脑下载后用数据线拷贝过来的情况）
+if [ "$HAVE" != "$SIZE" ]; then
+  [ -d "$HOME/storage/shared" ] || termux-setup-storage 2>/dev/null || true
+  sleep 2
+  for d in "$HOME/storage/downloads" "$HOME/storage/shared/Download" "$HOME/storage/shared/Downloads"; do
+    if [ -f "$d/$F" ] && [ "$(stat -c %s "$d/$F")" = "$SIZE" ]; then
+      echo "== 在 $d 找到已拷贝的模型，移动到 ~/ai/models（几分钟）"
+      mv "$d/$F" "$M/$F" && HAVE=$SIZE && break
+    fi
+  done
+fi
 if [ "$HAVE" != "$SIZE" ]; then
   FREE_KB=$(df -Pk "$HOME" | awk 'NR==2{print $4}')
   NEED_KB=$(( (SIZE - HAVE) / 1024 + 2 * 1024 * 1024 ))
@@ -27,8 +38,11 @@ if [ "$HAVE" != "$SIZE" ]; then
     exit 1
   fi
   echo "== 下载 $F（13.5GB，可断点续传；中断后重新运行这条命令会接着下）"
-  curl -fL --retry 10 --retry-delay 5 -C - -o "$M/$F" "$URL1" \
-    || curl -fL --retry 10 --retry-delay 5 -C - -o "$M/$F" "$URL2"
+  curl -fL --retry 10 --retry-all-errors --retry-delay 5 -C - -o "$M/$F" "$URL1" \
+    || curl -fL --retry 10 --retry-all-errors --retry-delay 5 -C - -o "$M/$F" "$URL2" \
+    || { echo "下载失败：这个模型在国内只能连 HuggingFace，网络不稳。"
+         echo "办法：在电脑上下载好，用数据线拷到平板的「下载」(Download) 文件夹，再重新运行这条命令，会自动找到它。"
+         exit 1; }
 fi
 [ "$(stat -c %s "$M/$F")" = "$SIZE" ] || { echo "文件大小不对，重新运行这条命令续传。"; exit 1; }
 
