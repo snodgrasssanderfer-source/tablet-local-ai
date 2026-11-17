@@ -21,6 +21,8 @@ else
   : "${NGL:=0}"; : "${DEVICE:=}"
   declare -p EXTRA_ARGS >/dev/null 2>&1 || EXTRA_ARGS=()
   GPU_ARGS=(-ngl "$NGL"); [ -n "$DEVICE" ] && GPU_ARGS+=(-dev "$DEVICE")
+  # 用 GPU 时，让 llama.cpp 找到安卓系统自带的 Adreno OpenCL 驱动
+  [ "$NGL" != 0 ] && export LD_LIBRARY_PATH="/vendor/lib64:$PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
   # 默认采样：temp 0.7 / top_p 0.8 / top_k 20 / min_p 0（酒馆等客户端可覆盖）
   nohup llama-server -m "$MODEL" --host 127.0.0.1 --port "$PORT" \
     -c "$CTX" -t "$THREADS" --jinja -fa on "${GPU_ARGS[@]}" \

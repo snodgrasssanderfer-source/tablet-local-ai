@@ -6,13 +6,15 @@ set -uo pipefail
 source "$HOME/ai/config.env"
 OUT="$HOME/ai/logs/bench.txt"
 mkdir -p "$HOME/ai/logs"
+# 让 llama.cpp 找到安卓系统自带的 Adreno OpenCL 驱动（经 gpu-probe 验证可行）
+export LD_LIBRARY_PATH="/vendor/lib64:$PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 echo "先停止模型服务，腾出内存……"
 ai-stop >/dev/null 2>&1
 
 echo "安装 GPU 后端（OpenCL、Vulkan）……"
-# 后端库 + 让 Termux 借用安卓系统自带 OpenCL 驱动的桥接包（vulkan-loader-android 与 vulkan-loader-generic 冲突，不装）
-apt-get install -y llama-cpp-backend-opencl llama-cpp-backend-vulkan opencl-vendor-driver >/dev/null 2>&1 \
+# 后端库 + OpenCL 桥接包 + 开源 Adreno Vulkan 驱动 Turnip（vulkan-loader-android 与 vulkan-loader-generic 冲突，不装）
+apt-get install -y llama-cpp-backend-opencl llama-cpp-backend-vulkan opencl-vendor-driver mesa-vulkan-icd-freedreno >/dev/null 2>&1 \
   || echo "（GPU 后端安装失败，只测 CPU）"
 
 {
