@@ -12,6 +12,32 @@
 
 全部离线运行，聊天内容不出平板。
 
+## 先选方案
+
+| | **方案 A：只装 Operit（最省事）** | **方案 B：Termux + 酒馆 + Operit** |
+|---|---|---|
+| 安装 | 装一个 App、下载模型、导入 | 装 Termux，粘贴一行命令 |
+| 角色扮演 | Operit 自带角色聊天、群聊、记忆 | 酒馆功能最全（角色卡、世界书、插件） |
+| agent 能力 | 有 | 有（Operit 连 Termux 里的模型） |
+
+Operit 从 v1.8.1 起内置了 llama.cpp，可以直接加载 GGUF 模型，所以**方案 A 不需要 Termux**。重度酒馆玩家选方案 B。
+
+## 方案 A：只装 Operit
+
+1. 下载安装 Operit：<https://github.com/AAswordman/Operit/releases>（`app-release.apk`，约 400MB）
+2. 用平板浏览器下载模型（魔搭，国内速度快），选一个：
+   - Q4_K_M（18.6GB，推荐先试）：<https://www.modelscope.cn/models/unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF/resolve/master/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf>
+   - Q3_K_M（14.7GB，Q4 跑不动时用）：<https://www.modelscope.cn/models/unsloth/Qwen3-30B-A3B-Instruct-2507-GGUF/resolve/master/Qwen3-30B-A3B-Instruct-2507-Q3_K_M.gguf>
+3. 打开 Operit 的模型配置，选 **本地模型 / llama.cpp（GGUF）**，导入刚下载的 `.gguf` 文件
+4. 上下文长度先设 8192 左右；内存不够就调小，或者换 Q3
+
+> 菜单名称以你装的 Operit 版本为准，找"模型配置 / 本地模型 / GGUF"一类的入口。
+> 只想要角色聊天、想用酒馆角色卡，也可以试 [ChatterUI](https://github.com/Vali-98/ChatterUI)：同样内置 llama.cpp，支持酒馆角色卡。
+
+---
+
+以下是**方案 B**。
+
 ## 需要什么
 
 - 安卓平板，64 位 ARM。按骁龙 8 Elite Gen 5 + 24GB 内存设计

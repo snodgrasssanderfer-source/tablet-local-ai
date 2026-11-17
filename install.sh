@@ -24,12 +24,10 @@ say "平板本地 AI 懒人包开始安装"
 echo "将安装：llama.cpp（模型服务）、Qwen3-30B-A3B-Instruct-2507、SillyTavern（酒馆）"
 
 # ---- 1. 国内镜像 ----
-if [ "$(ask '是否使用国内镜像加速软件源和 npm？[Y/n] ' y)" != "n" ]; then
-  CN=1
-  echo "deb https://mirrors.tuna.tsinghua.edu.cn/termux/apt/termux-main stable main" > "$PREFIX/etc/apt/sources.list"
-else
-  CN=0
-fi
+MIRROR_LINE="deb https://mirrors.tuna.tsinghua.edu.cn/termux/apt/termux-main stable main"
+set_mirror() { [ "$CN" = 1 ] && echo "$MIRROR_LINE" > "$PREFIX/etc/apt/sources.list"; return 0; }
+if [ "$(ask '是否使用国内镜像加速软件源和 npm？[Y/n] ' y)" != "n" ]; then CN=1; else CN=0; fi
+set_mirror
 
 # ---- 2. 选择模型 ----
 echo
@@ -53,9 +51,15 @@ NEED_KB=$(( (SIZE - HAVE) / 1024 + 3 * 1024 * 1024 ))
 
 # ---- 4. 安装软件包 ----
 say "更新软件源并安装 llama.cpp、Node.js、git（几分钟）"
+export DEBIAN_FRONTEND=noninteractive
+APT_OPTS=(-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)  # 升级时保留现有配置（包括软件源）
 apt-get update -y
-apt-get -y -o Dpkg::Options::=--force-confnew full-upgrade
-apt-get -y -o Dpkg::Options::=--force-confnew install llama-cpp nodejs-lts git curl
+apt-get "${APT_OPTS[@]}" full-upgrade
+# 升级可能改动软件源配置：重新确认镜像并刷新软件列表，再安装
+set_mirror
+apt-get update -y
+apt-get "${APT_OPTS[@]}" install llama-cpp nodejs-lts git curl \
+  || die "软件包安装失败。请把上面的报错截图发出来；也可以先运行 termux-change-repo 换一个软件源，再重新运行本脚本。"
 command -v llama-server >/dev/null || die "llama-server 没有装上，请把上面的报错截图发出来。"
 
 # ---- 5. 下载模型（可断点续传） ----
