@@ -1,0 +1,37 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# 测速：同一个模型分别用 纯 CPU 和 各个 GPU 后端（OpenCL / Vulkan）跑一遍，对比速度
+# 结果同时保存到 ~/ai/logs/bench.txt
+set -uo pipefail
+# shellcheck source=/dev/null
+source "$HOME/ai/config.env"
+OUT="$HOME/ai/logs/bench.txt"
+mkdir -p "$HOME/ai/logs"
+
+echo "先停止模型服务，腾出内存……"
+ai-stop >/dev/null 2>&1
+
+echo "安装 GPU 后端（OpenCL、Vulkan）……"
+apt-get install -y llama-cpp-backend-opencl llama-cpp-backend-vulkan >/dev/null 2>&1 \
+  || echo "（GPU 后端安装失败，只测 CPU）"
+
+{
+  echo "模型：$(basename "$MODEL")    线程：$THREADS    时间：$(date '+%F %T')"
+  echo "== 可用设备"
+  llama-bench --list-devices 2>&1
+} | tee "$OUT"
+
+# pp = 读题速度（处理提示词），tg = 生成速度（输出文字）；单位都是 每秒 token 数
+run() {
+  echo; echo "== $1" | tee -a "$OUT"
+  shift
+  timeout 600 llama-bench -m "$MODEL" -t "$THREADS" -p 128 -n 32 -r 1 -fa 1 "$@" 2>&1 \
+    | grep -E "^\|" | tee -a "$OUT" || echo "（这一项失败或超时）" | tee -a "$OUT"
+}
+
+run "纯 CPU" -ngl 0
+for dev in $(llama-bench --list-devices 2>/dev/null | sed -n 's/^ *\([A-Za-z0-9_]*\): .*/\1/p' | grep -v -i '^cpu'); do
+  run "GPU 设备：$dev" -ngl 99 -dev "$dev"
+done
+
+echo
+echo "测完了。结果保存在 ~/ai/logs/bench.txt。tg 那一行的数字越大，输出越快。"

@@ -90,12 +90,14 @@ CTX=8192        # 上下文长度：内存吃紧就改小（如 4096），够用
 THREADS=6       # CPU 线程数，6～8
 PORT=8080       # 模型接口端口：http://127.0.0.1:8080/v1
 ST_PORT=8000    # 酒馆端口：http://127.0.0.1:8000
+NGL=0           # GPU 层数：0 = 纯 CPU；用 GPU 时改成 99（先用 ai-bench 测哪个更快）
+DEVICE=""       # GPU 设备名，见 ai-bench 的输出
 EOF
 else
   sed -i "s|^MODEL=.*|MODEL=\"$MODELS/$FILE\"|" "$AI/config.env"
 fi
 CDN="https://cdn.jsdelivr.net/gh/snodgrasssanderfer-source/tablet-local-ai@main"
-for c in ai-start ai-stop ai-status; do
+for c in ai-start ai-stop ai-status ai-bench; do
   curl -fsSL "$REPO_RAW/bin/$c" -o "$PREFIX/bin/$c" || curl -fsSL "$CDN/bin/$c" -o "$PREFIX/bin/$c" \
     || die "下载 $c 失败"
   chmod +x "$PREFIX/bin/$c"
@@ -107,6 +109,6 @@ cat <<'EOF'
   1. 输入 ai-start 启动（第一次加载模型要 1～3 分钟）
   2. 启动后浏览器会自动打开酒馆：http://127.0.0.1:8000
      在酒馆里连接模型的方法见说明文档 README
-  3. 其他命令：ai-stop（停止）、ai-status（查看状态）
+  3. 其他命令：ai-stop（停止）、ai-status（查看状态）、ai-bench（测速）
   4. 配置文件：~/ai/config.env
 EOF

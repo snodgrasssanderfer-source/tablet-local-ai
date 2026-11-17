@@ -84,6 +84,7 @@ ai-start
 | `ai-start` | 启动模型和酒馆 |
 | `ai-stop` | 全部停止，释放内存 |
 | `ai-status` | 查看运行状态和内存 |
+| `ai-bench` | 测速：对比纯 CPU 和 GPU 后端（OpenCL / Vulkan）哪个快 |
 
 ## 在酒馆里连接模型（只需设置一次）
 
@@ -91,7 +92,7 @@ ai-start
 2. API 选 **Chat Completion**（聊天补全）
 3. 来源选 **Custom (OpenAI-compatible)**（自定义 / OpenAI 兼容）
 4. 地址（Custom Endpoint）填：`http://127.0.0.1:8080/v1`
-5. API Key 留空；模型名填 `qwen3-30b-a3b`（或点获取模型列表直接选）
+5. API Key 留空；模型名填 `local-model`（或点获取模型列表直接选）
 6. 点 **Connect**（连接），显示绿灯就成功了
 
 > 酒馆可以在设置里把界面语言改成中文，选项名称会变成对应的中文。
@@ -103,10 +104,28 @@ ai-start
 3. 在 Operit 的模型 / API 设置里，添加一个 **OpenAI 兼容**（自定义）的服务：
    - 接口地址：`http://127.0.0.1:8080/v1`
    - API Key：随便填，例如 `local`
-   - 模型名：`qwen3-30b-a3b`
+   - 模型名：`local-model`
 4. 保存后选它作为当前模型
 
 > Operit 不同版本的菜单名称可能略有不同，找"模型配置 / API 设置 / 自定义服务商"一类的入口即可。
+
+## 换成 Qwen3.5 去审查版（角色扮演推荐）
+
+[Huihui-Qwen3.5-35B-A3B-abliterated](https://huggingface.co/mradermacher/Huihui-Qwen3.5-35B-A3B-abliterated-i1-GGUF) 的 i1-IQ3_XXS 量化（13.5GB），比 Q4 小 5GB，24GB 内存的平板能完整装下。在 Termux 里粘贴：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/snodgrasssanderfer-source/tablet-local-ai/main/extras/use-qwen35-abliterated.sh | bash
+```
+
+它会下载模型、关闭 Qwen3.5 的"思考"模式、改好配置并启动。
+
+## 试试 GPU 加速
+
+```bash
+ai-bench
+```
+
+会自动安装 OpenCL 和 Vulkan 两个 GPU 后端，用当前模型分别测纯 CPU 和每个 GPU 后端的速度，结果保存在 `~/ai/logs/bench.txt`。如果某个 GPU 后端明显更快，编辑 `~/ai/config.env`，把 `NGL` 改成 `99`、`DEVICE` 填成那个设备名，然后 `ai-stop` 再 `ai-start`。
 
 ## 让它稳定运行
 
